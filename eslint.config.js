@@ -15,6 +15,13 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      // shadcn components intentionally export their variants and companion hooks.
+      'react-refresh/only-export-components': ['error', {
+        allowConstantExport: true,
+        allowExportNames: ['badgeVariants', 'buttonVariants', 'tabsListVariants', 'useComboboxAnchor', 'useSidebar', 'useTheme'],
+      }],
+    },
     languageOptions: {
       globals: globals.browser,
     },

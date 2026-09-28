@@ -1,3 +1,4 @@
+import { Footer } from "@/components/footer";
 import { Outlet } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -18,14 +19,14 @@ export default function RootLayout() {
           <div className="flex items-center gap-2">
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-4" />
-            <span className="text-sm font-medium">ระบบลงทะเบียนเรียน</span>
+            <span className="text-sm font-medium">จัดการวิชาเรียนและสถานะนักศึกษา</span>
           </div>
           <ModeToggle />
         </header>
         <main className="flex-1 p-4">
           <Outlet />
         </main>
-        <footer className="border-t p-4 text-center text-xs text-muted-foreground"></footer>
+        <Footer firstName="เศรษฐวุฒิ" lastName="สมาเกตุ" studentId="680610725" />
       </SidebarInset>
     </SidebarProvider>
   );

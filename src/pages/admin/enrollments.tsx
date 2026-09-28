@@ -1,243 +1,38 @@
 import { useState } from "react";
-import { PlusCircle } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, X } from "lucide-react";
 import { useEnrollmentStore } from "@/lib/enrollment-store";
-
-type Option = { value: string; label: string };
-
-function OptionSelect({
-  id,
-  options,
-  value,
-  onChange,
-  placeholder,
-}: {
-  id: string;
-  options: Option[];
-  value: string | null;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <Select
-      items={options}
-      value={value}
-      onValueChange={(v) => onChange(v as string)}
-    >
-      <SelectTrigger id={id} className="w-full">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
+import { MultiSelect } from "@/components/multi-select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export default function AdminEnrollmentsPage() {
-  const { students, courses, enrollments, enroll } = useEnrollmentStore();
-
-  const [formStudent, setFormStudent] = useState<string | null>(null);
-  const [formCourse, setFormCourse] = useState<string | null>(null);
-  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
-  const [mode, setMode] = useState<"course" | "student">("course");
-  const [filterCourse, setFilterCourse] = useState("all");
-  const [filterStudent, setFilterStudent] = useState("all");
-
-  const studentOptions: Option[] = students.map((s) => ({
-    value: s.studentId,
-    label: `${s.studentId} — ${s.firstName} ${s.lastName}`,
-  }));
-  const courseOptions: Option[] = courses.map((c) => ({
-    value: c.courseId,
-    label: `${c.courseId} — ${c.courseTitle}`,
-  }));
-
-  // วิชาที่นักศึกษาที่เลือกยังไม่ได้ลงทะเบียน
-  const availableCourseOptions = courseOptions.filter(
-    (c) =>
-      !enrollments.some(
-        (e) => e.studentId === formStudent && e.courseId === c.value
-      )
-  );
-
-  const handleEnroll = () => {
-    if (!formStudent || !formCourse) return;
-    enroll(formStudent, formCourse);
-    setEnrollDialogOpen(false);
-  };
-
-  // เคลียร์ฟอร์มทุกครั้งที่ Dialog ปิด ไม่ว่าจะปิดเพราะลงทะเบียนสำเร็จ, กด X,
-  // หรือคลิกนอก Dialog — เปิดครั้งหน้าจะได้เริ่มจากฟอร์มว่างเสมอ
-  const handleEnrollDialogOpenChange = (open: boolean) => {
-    setEnrollDialogOpen(open);
-    if (!open) {
-      setFormStudent(null);
-      setFormCourse(null);
-    }
-  };
-
-  const rows = enrollments.filter((e) =>
-    mode === "course"
-      ? filterCourse === "all" || e.courseId === filterCourse
-      : filterStudent === "all" || e.studentId === filterStudent
-  );
-
-  const nameOf = (studentId: string) => {
-    const s = students.find((x) => x.studentId === studentId);
-    return s ? `${s.firstName} ${s.lastName}` : "-";
-  };
-  const titleOf = (courseId: string) =>
-    courses.find((c) => c.courseId === courseId)?.courseTitle ?? "-";
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">จัดการการลงทะเบียน</h1>
-        <p className="text-sm text-muted-foreground">
-          Admin ลงทะเบียนและยกเลิกการลงทะเบียนให้นักศึกษาได้ทุกคน
-        </p>
-      </div>
-
-      <Dialog open={enrollDialogOpen} onOpenChange={handleEnrollDialogOpenChange}>
-        <DialogTrigger render={<Button />}>
-          <PlusCircle className="h-4 w-4" />
-          ลงทะเบียนให้นักศึกษา
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>ลงทะเบียนให้นักศึกษา</DialogTitle>
-            <DialogDescription>
-              เลือกนักศึกษาก่อน แล้วเลือกวิชาที่ยังไม่ได้ลงทะเบียน
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="formStudent">นักศึกษา</Label>
-              <OptionSelect
-                id="formStudent"
-                options={studentOptions}
-                value={formStudent}
-                placeholder="เลือกนักศึกษา"
-                onChange={(v) => {
-                  setFormStudent(v);
-                  setFormCourse(null);
-                }}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="formCourse">วิชา</Label>
-              <OptionSelect
-                id="formCourse"
-                options={availableCourseOptions}
-                value={formCourse}
-                placeholder={
-                  formStudent && availableCourseOptions.length === 0
-                    ? "ลงทะเบียนครบทุกวิชาแล้ว"
-                    : "เลือกวิชา"
-                }
-                onChange={setFormCourse}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button disabled={!formStudent || !formCourse} onClick={handleEnroll}>
-              <PlusCircle className="h-4 w-4" />
-              ลงทะเบียน
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Tabs
-        value={mode}
-        onValueChange={(v) => setMode(v as "course" | "student")}
-      >
-        <TabsList>
-          <TabsTrigger value="course">ค้นหาตามวิชา</TabsTrigger>
-          <TabsTrigger value="student">ค้นหาตามนักศึกษา</TabsTrigger>
-        </TabsList>
-        <TabsContent value="course" className="pt-2">
-          <OptionSelect
-            id="filterCourse"
-            options={[{ value: "all", label: "ทุกวิชา" }, ...courseOptions]}
-            value={filterCourse}
-            onChange={setFilterCourse}
-          />
-        </TabsContent>
-        <TabsContent value="student" className="pt-2">
-          <OptionSelect
-            id="filterStudent"
-            options={[{ value: "all", label: "ทุกคน" }, ...studentOptions]}
-            value={filterStudent}
-            onChange={setFilterStudent}
-          />
-        </TabsContent>
-      </Tabs>
-
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>รหัสนักศึกษา</TableHead>
-              <TableHead>ชื่อ-นามสกุล</TableHead>
-              <TableHead>รหัสวิชา</TableHead>
-              <TableHead>ชื่อวิชา</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-20 text-center text-muted-foreground"
-                >
-                  ไม่พบข้อมูลการลงทะเบียน
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((e) => (
-              <TableRow key={`${e.studentId}-${e.courseId}`}>
-                <TableCell>{e.studentId}</TableCell>
-                <TableCell>{nameOf(e.studentId)}</TableCell>
-                <TableCell>{e.courseId}</TableCell>
-                <TableCell>{titleOf(e.courseId)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
+  const { students, courses, enrollStudents, dropStudent } = useEnrollmentStore();
+  const [open, setOpen] = useState(false);
+  const [course, setCourse] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [mode, setMode] = useState("course");
+  const [filter, setFilter] = useState("all");
+  const available = students.filter(s => !s.enrolledCourses.includes(course ?? ""));
+  const visible = courses.filter(c => filter === "all" || (mode === "course" ? c.courseCode === filter : students.some(s => s.studentId === filter && s.enrolledCourses.includes(c.courseCode))));
+  const options = mode === "course" ? courses.map(c => ({ value: c.courseCode, label: `${c.courseCode} — ${c.courseTitle}` })) : students.map(s => ({ value: s.studentId, label: `${s.studentId} — ${s.firstName} ${s.lastName}` }));
+  return <div className="space-y-4">
+    <div><h1 className="text-xl font-semibold">จัดการการลงทะเบียน</h1><p className="text-sm text-muted-foreground">Admin ลงทะเบียนและยกเลิกการลงทะเบียนให้นักศึกษาได้ทุกคน</p></div>
+    <Button onClick={() => { setCourse(null); setSelected([]); setOpen(true); }} disabled={!courses.length}><PlusCircle /> ลงทะเบียนให้นักศึกษา</Button>
+    <Tabs value={mode} onValueChange={v => { setMode(v); setFilter("all"); }}><TabsList><TabsTrigger value="course">ค้นหาตามวิชา</TabsTrigger><TabsTrigger value="student">ค้นหาตามนักศึกษา</TabsTrigger></TabsList></Tabs>
+    <Select value={filter} onValueChange={v => setFilter(v ?? "all")} items={[{ value: "all", label: mode === "course" ? "ทุกวิชา" : "นักศึกษาทุกคน" }, ...options]}><SelectTrigger className="w-full" aria-label="กรองการลงทะเบียน"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{mode === "course" ? "ทุกวิชา" : "นักศึกษาทุกคน"}</SelectItem>{options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+    <div className="overflow-hidden rounded-lg border"><Table><TableHeader><TableRow><TableHead>รหัสวิชา</TableHead><TableHead>ชื่อวิชา</TableHead><TableHead className="text-center">จำนวน นศ.</TableHead><TableHead>นักศึกษาที่ลงทะเบียน</TableHead></TableRow></TableHeader><TableBody>
+      {visible.map(c => { const enrolled = students.filter(s => s.enrolledCourses.includes(c.courseCode)); return <TableRow key={c.courseCode}><TableCell className="font-medium">{c.courseCode}</TableCell><TableCell className="min-w-48 whitespace-normal">{c.courseTitle}</TableCell><TableCell className="text-center">{enrolled.length}</TableCell><TableCell><div className="flex min-w-48 flex-wrap gap-1">{enrolled.map(s => <Badge key={s.studentId} variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-300">{s.firstName} {s.lastName}<button type="button" aria-label={`ยกเลิกการลงทะเบียน ${s.firstName} ${s.lastName} วิชา ${c.courseCode}`} onClick={() => dropStudent(c.courseCode, s.studentId)} className="rounded hover:bg-blue-500/20 focus-visible:outline-2"><X className="size-3" /></button></Badge>)}{!enrolled.length && <span className="text-muted-foreground">ยังไม่มีนักศึกษาลงทะเบียน</span>}</div></TableCell></TableRow>; })}
+      {!visible.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">ไม่พบรายการลงทะเบียน</TableCell></TableRow>}
+    </TableBody></Table></div>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>ลงทะเบียนให้นักศึกษา</DialogTitle><DialogDescription>เลือกวิชาก่อน แล้วเลือกรายชื่อนักศึกษาได้มากกว่า 1 คน</DialogDescription></DialogHeader>
+      <div className="space-y-2"><Label htmlFor="enrollment-course">วิชา</Label><Select value={course} onValueChange={v => { setCourse(v); setSelected([]); }} items={courses.map(c => ({ value: c.courseCode, label: `${c.courseCode} — ${c.courseTitle}` }))}><SelectTrigger id="enrollment-course" className="w-full"><SelectValue placeholder="เลือกวิชา" /></SelectTrigger><SelectContent>{courses.map(c => <SelectItem key={c.courseCode} value={c.courseCode}>{c.courseCode} — {c.courseTitle}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-2"><Label htmlFor="enrollment-students">นักศึกษา</Label><MultiSelect key={course ?? "none"} id="enrollment-students" options={available.map(s => ({ value: s.studentId, label: `${s.studentId} — ${s.firstName} ${s.lastName}` }))} value={selected} onChange={setSelected} disabled={!course} placeholder={!course ? "กรุณาเลือกวิชาก่อน" : "ค้นหาและเลือกนักศึกษา"} />{course && !available.length && <p className="text-sm text-muted-foreground">นักศึกษาทุกคนลงทะเบียนวิชานี้แล้ว</p>}</div>
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>ยกเลิก</Button><Button disabled={!course || !selected.length} onClick={() => { if (course) enrollStudents(course, selected); setOpen(false); }}><PlusCircle /> ลงทะเบียน ({selected.length} คน)</Button></DialogFooter>
+    </DialogContent></Dialog>
+  </div>;
 }
